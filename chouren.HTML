@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 自动点名器 (随机名单版)</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --button-gradient: linear-gradient(45deg, #FF512F 0%, #DD2476 100%);
+            --bg-gradient: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-image: var(--bg-gradient);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 700px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 { margin-top: 0; color: #4a5568; font-size: 28px; letter-spacing: 1px; }
+
+        .name-display {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            background: #f7fafc;
+            border-radius: 16px;
+            border: 3px dashed #cbd5e0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .name-text {
+            font-size: 72px;
+            font-weight: 800;
+            color: #4a5568;
+            line-height: 1;
+            z-index: 2;
+        }
+
+        .winner-effect {
+            animation: popScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            color: #d53f8c;
+            text-shadow: 0 5px 15px rgba(221, 36, 118, 0.3);
+        }
+
+        @keyframes popScale {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1.0); opacity: 1; }
+        }
+
+        .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+
+        button {
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-action {
+            background: var(--button-gradient);
+            color: white;
+            font-size: 22px;
+            padding: 15px 50px;
+            min-width: 180px;
+        }
+
+        .btn-secondary { background: #edf2f7; color: #4a5568; }
+
+        .options {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .tag { background: #e2e8f0; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: fall linear forwards;
+            opacity: 0;
+            z-index: 1;
+            border-radius: 50%;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(600px) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="drawCard" class="card">
+        <h1>🎉 课堂点名</h1>
+        
+        <div class="options">
+            <span class="tag">名单总人数: <span id="totalCountDisplay">0</span> 人</span>
+            <span class="tag">剩余可抽: <span id="countDisplay">0</span> 人</span>
+            <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                <input type="checkbox" id="removeMode"> 抽中后移出名单
+            </label>
+            <button class="btn-secondary" onclick="resetCurrentList()" style="font-size:14px; padding:6px 15px;">🔄 重置</button>
+        </div>
+
+        <div class="name-display">
+            <div id="nameText" class="name-text">准备就绪</div>
+        </div>
+
+        <div class="btn-group">
+            <button id="mainBtn" class="btn-action" onclick="handleAction()">开始</button>
+        </div>
+    </div>
+
+    <div id="confettiContainer"></div>
+
+    <script>
+        // ==========================================================
+        // 🚨 随机生成的 65 人名单 (保留了两个特定目标) 🚨
+        // ==========================================================
+        const FIXED_NAMES = [
+            "张伟杰", "王思琪", "李浩然", "刘梓轩", "陈嘉欣", "杨博文", "赵若冰", "黄宇航",
+            "周雅楠", "吴承翰", "徐若涵", "孙博涛", "马晓晨", "朱子墨", "胡嘉佳", "郭雨萌",
+            "何天翊", "林悦涵", "高子腾", "罗雨彤", "李旭杰", "郑云飞", "梁芯慈", "谢雨桐",
+            "韩博轩", "唐静美", "冯梓豪", "于梦洁", "董浩宇", "萧雅琳", "程家豪", "曹婉婷",
+            "袁逸飞", "邓羽丰", "许诺言", "傅子豪", "沈若男", "曾语嫣", "彭骏臣", "吕思源",
+            "苏博远", "卢映雪", "蒋明翰", "贾诗曼", "丁文杰", "魏子谦", "薛雅洁", "叶凡",
+            "王径开", "范思远", "崔振豪", "石婉莹", "江昱辰", "史博然", "顾云翔", "侯若琳",
+            "邵子涵", "孟浩天", "龙雨萌", "万志强", "段博文", "金灿灿", "武嘉木", "乔子怡", "白艺博"
+        ];
+        
+        const TARGET_NAME_1 = "李杰"; 
+        const TARGET_NAME_2 = "王开"; 
+        const FINAL_STOP_DELAY = 150; 
+        // ==========================================================
+        
+        let names = [...FIXED_NAMES];
+        let isRunning = false;
+        let isStopping = false;
+        let timer = null;
+        let drawCount = 0; 
+        
+        const nameText = document.getElementById('nameText');
+        const mainBtn = document.getElementById('mainBtn');
+        const countDisplay = document.getElementById('countDisplay');
+        const totalCountDisplay = document.getElementById('totalCountDisplay');
+        const removeMode = document.getElementById('removeMode');
+        const confettiContainer = document.getElementById('confettiContainer');
+
+        window.onload = function() {
+            totalCountDisplay.innerText = FIXED_NAMES.length;
+            updateCount();
+        };
+
+        function updateCount() {
+            countDisplay.innerText = names.length;
+        }
+        
+        function resetCurrentList() {
+            if (isRunning || isStopping) return;
+            if(confirm("确定要重置名单吗？")) {
+                names = [...FIXED_NAMES];
+                drawCount = 0;
+                updateCount();
+                nameText.innerText = "准备就绪";
+                nameText.classList.remove('winner-effect');
+            }
+        }
+
+        function handleAction() {
+            if (names.length === 0) { alert("名单已空！"); return; }
+            if (isRunning) { if (!isStopping) stopWithInertia(); } 
+            else { startRolling(); }
+        }
+
+        function startRolling() {
+            isRunning = true;
+            isStopping = false;
+            mainBtn.innerText = "🛑 停！";
+            nameText.classList.remove('winner-effect');
+            confettiContainer.innerHTML = '';
+            clearInterval(timer);
+            timer = setInterval(() => {
+                nameText.innerText = names[Math.floor(Math.random() * names.length)];
+            }, 50);
+        }
+
+        function stopWithInertia() {
+            isStopping = true;
+            mainBtn.innerText = "🤞 选定中...";
+            mainBtn.disabled = true;
+            clearInterval(timer);
+
+            let delay = 50;
+            let targetName = (drawCount === 0) ? TARGET_NAME_1 : (drawCount === 1 ? TARGET_NAME_2 : null);
+
+            function slowLoop() {
+                nameText.innerText = names[Math.floor(Math.random() * names.length)];
+                delay *= 1.15;
+                if (delay < 800) { setTimeout(slowLoop, delay); } 
+                else {
+                    if (targetName) nameText.innerText = targetName;
+                    setTimeout(() => finalizeWinner(targetName), FINAL_STOP_DELAY); 
+                }
+            }
+            slowLoop();
+        }
+
+        function finalizeWinner(forcedWinner) {
+            let winner = forcedWinner || nameText.innerText;
+            let winnerIndex = names.indexOf(winner);
+            
+            drawCount++;
+            nameText.innerText = winner;
+            nameText.classList.add('winner-effect');
+            
+            isRunning = false;
+            isStopping = false;
+            mainBtn.innerText = "开始";
+            mainBtn.disabled = false;
+            fireConfetti();
+
+            if (removeMode.checked && winnerIndex !== -1) {
+                names.splice(winnerIndex, 1);
+                updateCount();
+            }
+        }
+
+        function fireConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'][Math.floor(Math.random()*4)];
+                conf.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                confettiContainer.appendChild(conf);
+            }
+        }
+    </script>
+</body>
+</html>

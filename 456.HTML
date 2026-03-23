@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>核心价值观祈愿 - 视觉增强版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 全局变量 --- */
+        :root {
+            --genshin-bg: #1a1a1a; 
+            --genshin-gold: #d3bc8e;
+            --ali-blue: #1677ff;
+            --star-color: #FFD700; /* 星星的主金色 */
+        }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            font-family: "Microsoft YaHei", sans-serif; background-color: var(--genshin-bg); color: white; user-select: none;
+        }
+
+        /* ---------------------------------------------------- */
+        /* ⭐ 位置 1: 抽卡前的主界面背景 (snipas33.jpg) ⭐ */
+        /* ---------------------------------------------------- */
+        #app {
+            position: relative; width: 100vw; height: 100vh;
+            background-image: url('snipas33.jpg'); 
+            background-size: cover;
+            background-position: center;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #app::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.05); 
+            z-index: 1; 
+        }
+
+        /* ---------------------------------------------------- */
+        /* ⭐ 位置 2: 抽卡后、显示大字时的结果展示界面的背景 ⭐ */
+        /* ---------------------------------------------------- */
+        #result-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 90;
+            background-image: url('RESULT_BACKGROUND_IMAGE_PATH.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s;
+        }
+        #result-layer::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); z-index: -1;
+        }
+
+        /* --- 史诗级文字特效 (字更大: 18rem) --- */
+        .value-text {
+            font-family: 'Ma Shan Zheng', cursive; 
+            font-size: 18rem; /* 放大文字 */
+            line-height: 1.2;
+            color: transparent; 
+            position: relative;
+            z-index: 10;
+            white-space: nowrap; 
+        }
+
+        .anim-reveal {
+            animation: textOutlineFill 2.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+
+        @keyframes textOutlineFill {
+            0% { opacity: 0; transform: scale(3); -webkit-text-stroke: 2px rgba(255, 215, 0, 0); color: transparent; letter-spacing: 50px; }
+            20% { opacity: 1; transform: scale(1); -webkit-text-stroke: 4px #FFD700; color: transparent; letter-spacing: 0px; }
+            60% { -webkit-text-stroke: 4px #FFD700; color: transparent; text-shadow: 0 0 50px rgba(255, 215, 0, 0.8); }
+            100% {
+                -webkit-text-stroke: 0 transparent;
+                color: #FFF; 
+                text-shadow: 
+                    0 0 10px #FFD700,
+                    0 0 40px #FFD700,
+                    0 0 80px #FF4500;
+            }
+        }
+
+        /* --- 五角星样式及动画 --- */
+        .rarity-stars {
+            font-size: 3rem; margin-top: -30px; text-align: center;
+            display: flex; /* 确保星星并排显示 */
+            justify-content: center;
+        }
+        
+        .star-icon {
+            font-size: 3.5rem; /* 单个星星更大 */
+            color: var(--star-color); 
+            margin: 0 5px;
+            opacity: 0; /* 默认隐藏 */
+            transform: scale(0.5); /* 初始缩小 */
+            
+            /* 锋利的金色发光特效 */
+            text-shadow: 
+                0 0 5px var(--star-color),
+                0 0 15px var(--star-color),
+                0 0 30px rgba(255, 69, 0, 0.8); /* 边缘带一点橙色光晕 */
+
+            /* 核心：延迟渐显动画 */
+            animation: delay-fade-in 0.8s ease forwards;
+        }
+
+        @keyframes delay-fade-in {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            50% { opacity: 1; transform: scale(1.1) translateY(0); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* --- (保留其他 UI 和控制样式不变) --- */
+        .icon-wish {
+            width: 24px; height: 24px; background-image: url('ggg.png'); 
+            background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 0; background-color: transparent;
+        }
+        .icon-primo {
+            width: 24px; height: 24px; background-image: url('ys.png'); 
+            background-size: contain; background-repeat: no-repeat; background-position: center; clip-path: none; background-color: transparent;
+        }
+        
+        .top-bar { position: absolute; top: 20px; right: 30px; display: flex; gap: 20px; z-index: 60; }
+        .currency-bar { background: rgba(0,0,0,0.5); border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; z-index: 2;}
+        .add-btn { background: #ece5d8; color: #3b4255; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+        .history-btn-toggle { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: var(--genshin-gold); padding: 8px 15px; border-radius: 20px; cursor: pointer; z-index: 2;}
+        .history-panel { position: absolute; top: 70px; right: 30px; width: 220px; background: rgba(0,0,0,0.8); border-radius: 8px; padding: 15px; z-index: 60; display: none; }
+        #history-list { list-style: none; padding: 0; margin: 10px 0 0 0; display: flex; flex-wrap: wrap; gap: 5px; }
+        .tag { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--genshin-gold); font-size: 12px;}
+
+        .controls { position: absolute; bottom: 40px; right: 50px; display: flex; gap: 20px; z-index: 50; }
+        .btn { background-color: #ece5d8; color: #3b4255; border: none; padding: 12px 30px; font-size: 18px; font-weight: bold; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; }
+        .btn:disabled { filter: grayscale(1); cursor: not-allowed; }
+        .btn-reset { background-color: #d94141; color: white; }
+        
+        #video-layer { position: absolute; top:0; left:0; width:100%; height:100%; z-index:100; background:black; display:none; }
+        video { width:100%; height:100%; object-fit:cover; }
+
+        /* --- 支付界面和 Modal (保持隐藏) --- */
+        #shop-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; display: none; justify-content: center; align-items: center; }
+        .shop-container { background: #2a2f46; border: 2px solid #4a5278; border-radius: 10px; width: 700px; padding: 20px; color: var(--genshin-gold); position: relative; }
+        .shop-close { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; }
+        .shop-items { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+        .shop-item { background: #3b4255; border: 1px solid #4a5278; border-radius: 8px; width: 180px; padding: 20px 10px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .shop-item:hover { transform: translateY(-5px); border-color: var(--genshin-gold); }
+        
+        #alipay-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f5f5; z-index: 300; display: none; flex-direction: column; color: #333; }
+        .ali-header { background: var(--ali-blue); color: white; padding: 15px; text-align: center; font-size: 18px; position: relative; }
+        .ali-back { position: absolute; left: 15px; cursor: pointer; }
+        #ali-main-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        .ali-pay-btn { background: var(--ali-blue); color: white; border: none; padding: 15px; border-radius: 4px; font-size: 18px; margin-top: auto; cursor: pointer; }
+        
+        #ali-password-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 310; display: none; justify-content: center; align-items: flex-end; }
+        .password-modal { background: #f5f5f5; width: 100%; max-width: 500px; border-radius: 12px 12px 0 0; }
+        .pwd-dots-container { background: white; padding: 30px 20px; display: flex; justify-content: center; }
+        .pwd-dots-box { border: 1px solid #ddd; border-radius: 4px; display: flex; overflow: hidden; }
+        .pwd-dot { width: 50px; height: 50px; border-right: 1px solid #ddd; display: flex; justify-content: center; align-items: center; }
+        .pwd-dot:last-child { border-right: none; }
+        .has-dot::after { content: ''; width: 12px; height: 12px; background: black; border-radius: 50%; }
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #ccc; }
+        .key { background: white; padding: 15px; text-align: center; font-size: 24px; cursor: pointer; }
+        .key:active { background: #ddd; }
+
+        #success-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 320; display: none; justify-content: center; align-items: center; flex-direction: column; }
+        .checkmark-circle { width: 100px; height: 100px; border-radius: 50%; background: var(--ali-blue); display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+        .checkmark { width: 50px; height: 25px; border-left: 5px solid white; border-bottom: 5px solid white; transform: rotate(-45deg) translate(5px, -5px); }
+        .success-text { font-size: 24px; color: var(--ali-blue); font-weight: bold; }
+        
+        #toast { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: var(--genshin-gold); padding: 15px 30px; border-radius: 8px; border: 1px solid var(--genshin-gold); z-index: 400; opacity: 0; transition: opacity 0.5s; pointer-events: none;}
+        
+        .shake-anim { animation: shake 0.5s; color: #ff5555 !important; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
+
+        /* 移动端适配：字体过大时稍微缩小 */
+        @media (max-width: 768px) {
+            .value-text { font-size: 8rem; } /* 移动端字也放大 */
+        }
+    </style>
+</head>
+<body>
+
+<audio id="audio-click" src="dian.MP3" preload="auto"></audio>
+<audio id="audio-dedao" src="dedao.MP3" preload="auto"></audio>
+<audio id="audio-qian" src="qian.MP3" preload="auto"></audio>
+
+<div id="app">
+    <div class="top-bar">
+        <div class="currency-bar" onclick="openShop()">
+            <div class="icon-primo"></div>
+            <div id="primo-count-display" style="font-weight: bold; min-width: 60px; text-align: right;">0</div>
+            <div class="add-btn">+</div>
+        </div>
+        <button class="history-btn-toggle" onclick="toggleHistory()">历史记录</button>
+    </div>
+
+    <div class="history-panel" id="history-panel">
+        <div style="color: var(--genshin-gold); border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px;">已获得 (<span id="count">0</span>/12)</div>
+        <ul id="history-list"></ul>
+    </div>
+
+    <div id="video-layer">
+        <video id="gacha-video" playsinline style="pointer-events: none;"></video>
+    </div>
+
+    <div id="result-layer" onclick="closeResult()">
+        <div style="text-align: center; position: relative;">
+            <div class="value-text" id="result-text">富强</div>
+            <div class="rarity-stars" id="stars"></div>
+            <p style="color: rgba(255,255,255,0.6); margin-top: 40px; font-size: 14px; opacity: 0; animation: fadeInUp 1s ease 2s forwards;">(点击任意处关闭)</p>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-reset" onclick="resetPool()">🔄 重置卡池</button>
+        <button class="btn" id="pull-btn" onclick="pullOne()">
+            <div class="icon-wish"></div> 祈愿1次 <span style="font-size: 12px; color: #666; margin-left: 5px;">(-160)</span>
+        </button>
+    </div>
+
+    <div id="shop-modal">
+        <div class="shop-container">
+            <div class="shop-close" onclick="closeShop()">×</div>
+            <div style="font-size: 24px; text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">结晶充值</div>
+            <div class="shop-items">
+                <div class="shop-item" onclick="startAlipayFlow(6, 60)">
+                    <div class="icon-primo" style="transform: scale(2.5); margin: 20px 0;"></div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: white;">60 创世结晶</div>
+                    <div style="background: #ece5d8; color: #333; padding: 5px 15px; border-radius: 15px; font-weight: bold;">¥ 6.00</div>
+                </div>
+                <div class="shop-item" onclick="startAlipayFlow(648, 6480)">
+                    <div class="icon-primo" style="transform: scale(2.5); margin: 20px 0;"></div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: white;">6480 创世结晶</div>
+                    <div style="background: #d3bc8e; color: #333; padding: 5px 15px; border-radius: 15px; font-weight: bold;">¥ 648.00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alipay-layer">
+        <div class="ali-header"><div class="ali-back" onclick="closeAlipay()">< 返回</div>支付宝付款</div>
+        <div id="ali-main-content">
+            <div style="background: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+                <div style="color: #888; font-size: 14px;">米哈游 - 游戏充值</div>
+                <div id="ali-order-price" style="font-size: 36px; font-weight: bold; margin: 10px 0;">¥ 0.00</div>
+            </div>
+            <button class="ali-pay-btn" onclick="showPasswordPad()">立即付款</button>
+        </div>
+    </div>
+
+    <div id="ali-password-layer">
+        <div class="password-modal">
+            <div style="text-align: center; padding: 15px; border-bottom: 1px solid #ddd; position: relative; background: white;">
+                <div style="position: absolute; left: 15px; cursor: pointer; color: #999; font-size: 24px;" onclick="closePasswordPad()">×</div>
+                <span style="font-size: 18px; font-weight: 500;">请输入支付密码</span>
+            </div>
+            <div class="pwd-dots-container">
+                <div class="pwd-dots-box" id="pwd-dots">
+                    <div class="pwd-dot"></div><div class="pwd-dot"></div><div class="pwd-dot"></div><div class="pwd-dot"></div><div class="pwd-dot"></div><div class="pwd-dot"></div>
+                </div>
+            </div>
+            <div class="keypad" id="keypad">
+                <div class="key" data-num="1">1</div><div class="key" data-num="2">2</div><div class="key" data-num="3">3</div>
+                <div class="key" data-num="4">4</div><div class="key" data-num="5">5</div><div class="key" data-num="6">6</div>
+                <div class="key" data-num="7">7</div><div class="key" data-num="8">8</div><div class="key" data-num="9">9</div>
+                <div class="key" style="background:#e0e0e0; cursor:default"></div><div class="key" data-num="0">0</div><div class="key" data-action="del" style="background:#e0e0e0">⬅</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-layer">
+        <div class="checkmark-circle"><div class="checkmark"></div></div>
+        <div class="success-text">支付成功</div>
+    </div>
+    
+    <div id="toast"><div class="icon-primo"></div><span id="toast-text"></span></div>
+
+</div>
+
+<script>
+    // --- 逻辑脚本 ---
+    const FULL_deck = ["富强", "民主", "文明", "和谐","自由", "平等", "公正", "法治","爱国", "敬业", "诚信", "友善"];
+    let currentDeck = [...FULL_deck];
+    let pulledItems = [];
+    let primogems = 160;
+    const PULL_COST = 160;
+    
+    // 充值逻辑变量
+    let pendingAmount = 0;
+    let inputPwd = "";
+    
+    const dom = {
+        primo: document.getElementById('primo-count-display'),
+        pullBtn: document.getElementById('pull-btn'),
+        videoLayer: document.getElementById('video-layer'),
+        video: document.getElementById('gacha-video'),
+        resultLayer: document.getElementById('result-layer'),
+        resultText: document.getElementById('result-text'),
+        stars: document.getElementById('stars'), // 现在是容器
+        shop: document.getElementById('shop-modal'),
+        ali: document.getElementById('alipay-layer'),
+        pwdLayer: document.getElementById('ali-password-layer'),
+        pwdDots: document.getElementById('pwd-dots').children,
+        keypad: document.getElementById('keypad'),
+        success: document.getElementById('success-layer'),
+        toast: document.getElementById('toast'),
+        audioClick: document.getElementById('audio-click'),
+        audioDedao: document.getElementById('audio-dedao'),
+        audioQian: document.getElementById('audio-qian')
+    };
+
+    updatePrimo();
+
+    function playAudio(audioElement) {
+        if (audioElement) {
+            audioElement.currentTime = 0;
+            audioElement.play().catch(e => console.error("音频播放失败:", e));
+        }
+    }
+    
+    // --- 新增：动态生成星星和动画 ---
+    function renderStars(isGold) {
+        dom.stars.innerHTML = ''; // 清空旧星星
+        const numStars = isGold ? 5 : 4;
+        const starChar = '★'; // 使用锋利的五角星 Unicode 字符
+        
+        for (let i = 0; i < numStars; i++) {
+            const star = document.createElement('span');
+            star.className = 'star-icon';
+            star.innerText = starChar;
+            
+            // 设置延迟动画：每个星星依次出现
+            // i=0 延迟 0.1s, i=1 延迟 0.2s, ...
+            star.style.animationDelay = `${0.1 + i * 0.1}s`; 
+            
+            dom.stars.appendChild(star);
+        }
+    }
+    
+    // --- 核心逻辑 (保持不变) ---
+    function pullOne() {
+        if (primogems < PULL_COST) {
+            dom.primo.parentElement.classList.add('shake-anim');
+            setTimeout(() => {
+                dom.primo.parentElement.classList.remove('shake-anim');
+                openShop();
+            }, 600);
+            return;
+        }
+        if (currentDeck.length === 0) { alert("已全部集齐！"); return; }
+        
+        playAudio(dom.audioClick);
+
+        primogems -= PULL_COST;
+        updatePrimo();
+
+        const idx = Math.floor(Math.random() * currentDeck.length);
+        const value = currentDeck[idx];
+        currentDeck.splice(idx, 1);
+        pulledItems.push(value);
+        updateHistory();
+
+        const isGold = Math.random() < 0.3; 
+        
+        const videoSrc = isGold ? 'gold.mp4' : 'purple.mp4';
+        dom.video.src = videoSrc;
+        dom.videoLayer.style.display = 'block';
+        
+        dom.video.play().catch(() => {
+            showResult(value, isGold);
+        });
+        
+        dom.video.onended = () => showResult(value, isGold);
+    }
+
+    function showResult(value, isGold) {
+        dom.videoLayer.style.display = 'none';
+        
+        playAudio(dom.audioDedao); 
+
+        dom.resultText.innerText = value;
+        
+        // 重置并添加动画类，触发文字动画重播
+        dom.resultText.classList.remove('anim-reveal');
+        void dom.resultText.offsetWidth; 
+        dom.resultText.classList.add('anim-reveal');
+        
+        // 调用新的星星渲染函数
+        renderStars(isGold); 
+
+        dom.resultLayer.style.display = 'flex';
+        dom.resultLayer.style.pointerEvents = 'auto';
+        requestAnimationFrame(() => { dom.resultLayer.style.opacity = '1'; });
+    }
+
+    function closeResult() {
+        dom.resultLayer.style.opacity = '0';
+        dom.resultLayer.style.pointerEvents = 'none';
+        setTimeout(() => { dom.resultLayer.style.display = 'none'; }, 500);
+    }
+
+    function updatePrimo() {
+        dom.primo.innerText = primogems;
+        dom.pullBtn.disabled = primogems < PULL_COST;
+    }
+    
+    function updateHistory() {
+        const list = document.getElementById('history-list'); list.innerHTML = '';
+        pulledItems.forEach(t => { const li = document.createElement('li'); li.className='tag'; li.innerText=t; list.appendChild(li); });
+        document.getElementById('count').innerText = pulledItems.length;
+    }
+    function toggleHistory() { const p = document.getElementById('history-panel'); p.style.display = p.style.display==='block'?'none':'block'; }
+    function resetPool() { if(confirm("重置卡池？")) { currentDeck=[...FULL_deck]; pulledItems=[]; updateHistory(); } }
+
+    // --- 充值流程简写 (保持不变) ---
+    function openShop() { dom.shop.style.display = 'flex'; }
+    function closeShop() { dom.shop.style.display = 'none'; }
+    function startAlipayFlow(amt, price) {
+        pendingAmount = amt;
+        document.getElementById('ali-order-price').innerText = "¥ " + price.toFixed(2);
+        closeShop(); dom.ali.style.display = 'flex';
+    }
+    function closeAlipay() { dom.ali.style.display = 'none'; inputPwd=""; updateDots(); }
+    function showPasswordPad() { inputPwd=""; updateDots(); dom.pwdLayer.style.display = 'flex'; }
+    function closePasswordPad() { dom.pwdLayer.style.display = 'none'; }
+    
+    dom.keypad.addEventListener('click', (e) => {
+        const num = e.target.dataset.num;
+        const act = e.target.dataset.action;
+        if(num) {
+            if(inputPwd.length < 6) {
+                inputPwd += num; updateDots();
+                if(inputPwd.length === 6) setTimeout(paySuccess, 300);
+            }
+        } else if(act === 'del') { inputPwd = inputPwd.slice(0, -1); updateDots(); }
+    });
+    
+    function updateDots() {
+        for(let i=0;i<6;i++) document.getElementById('pwd-dots').children[i].className = i < inputPwd.length ? 'pwd-dot has-dot' : 'pwd-dot';
+    }
+    
+    function paySuccess() {
+        closePasswordPad(); dom.success.style.display = 'flex';
+        setTimeout(() => {
+            dom.success.style.display = 'none'; closeAlipay();
+            
+            primogems += pendingAmount; updatePrimo();
+            playAudio(dom.audioQian); 
+            
+            dom.toast.children[1].innerText = `获得 ${pendingAmount} 原石`;
+            dom.toast.style.opacity = '1'; dom.toast.style.top='20%';
+            setTimeout(()=> { dom.toast.style.opacity='0'; dom.toast.style.top='15%'; }, 3000);
+        }, 1500);
+    }
+</script>
+</body>
+</html>
